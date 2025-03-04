@@ -91,3 +91,9 @@ def update_post(id:int,post:post):
     my_posts[index] = post_dict
     return {"data":post_dict}
 
+@app.post("/create_database_post",status_code=status.HTTP_201_CREATED)
+def create_posts(new_post:post):
+    cursor.execute(""" insert into posts (title, content, published) values(%s,%s,%s) returning * """,(new_post.title,new_post.content,new_post.published))
+    post_new = cursor.fetchone()
+    conn.commit()
+    return {"data":post_new}
