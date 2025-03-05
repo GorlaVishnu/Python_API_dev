@@ -97,3 +97,11 @@ def create_posts(new_post:post):
     post_new = cursor.fetchone()
     conn.commit()
     return {"data":post_new}
+
+@app.get("/one_posts/{id}")
+def get_post(id: str):
+    cursor.execute(""" SELECT * from posts WHERE id = %s """, (str(id)))
+    single_post = cursor.fetchone()
+    if not single_post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"post with id:{id} was not found")
+    return {"post_details": single_post}
