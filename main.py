@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional,List
 from fastapi import FastAPI,Response,status,HTTPException,Depends
 from fastapi.params import Body
 from pydantic import BaseModel
@@ -8,16 +8,17 @@ from psycopg2.extras import RealDictCursor
 import time
 from sqlalchemy.orm import Session
 from database import engine, get_db
-import models
+import models, schema
+from routers import post, user
+
 models.Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI()
 
+app.include_router(post.router)
+app.include_router(user.router)
 
-class post(BaseModel):
-    title : str
-    content : str
-    published : bool = True
 while True:
     try:
         conn = psycopg2.connect(host='localhost', database='fastapi', user='postgres', password = 'Vishnu@2001', cursor_factory=RealDictCursor)
@@ -48,7 +49,6 @@ def test_posts(db: Session = Depends(get_db)):
     posts = db.query(models.Post).all()
     return {"status" : posts}
 
-
 @app.get("/post/all")
 def get_posts():
     cursor.execute("""Select * from posts """)
@@ -56,7 +56,7 @@ def get_posts():
     return {"data":my_new_posts}
 
 @app.post("/createpost",status_code=status.HTTP_201_CREATED)
-def create_posts(new_post:post):
+def create_posts(new_post:schema.PostBase):
     post_dict = new_post.dict()
     post_dict['id'] = randrange(0,10000)
     my_posts.append(post_dict)
@@ -92,7 +92,7 @@ def delete_post(id:int):
     return {"message" : "post was succesfully delete"}
 
 @app.put("/put/{id}")
-def update_post(id:int,post:post):
+def update_post(id:int,post:schema.PostBase):
     index = get_index_post(id)
     if index == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"post with this id: {id} does not exist.")
@@ -105,7 +105,7 @@ def update_post(id:int,post:post):
 # CRUD Operations of DATABASE
 
 @app.post("/create_database_post",status_code=status.HTTP_201_CREATED)
-def create_posts(new_post:post):
+def create_posts(new_post:schema.PostBase):
     cursor.execute(""" insert into posts (title, content, published) values(%s,%s,%s) returning * """,(new_post.title,new_post.content,new_post.published))
     post_new = cursor.fetchone()
     conn.commit()
@@ -131,7 +131,7 @@ def delete_post(id:int):
     return {"message" : "post was succesfully delete"}
 
 @app.put("/update_database/{id}")
-def update_post(id: int, post1: post):
+def update_post(id: int, post1: schema.PostBase):
     cursor.execute(""" UPDATE posts SET title = %s, content = %s, published = %s  WHERE id = %s RETURNING * """, (post1.title,post1.content,post1.published,str(id),))
     updated_post = cursor.fetchone()
     conn.commit()
@@ -140,46 +140,3 @@ def update_post(id: int, post1: post):
                             detail=f"post with this id: {id} does not exist.")
     return {"data": updated_post}
 
-
-# CRUD Operations of SQLALCHEMY
-
-@app.post("/create_sqlalchemy_post",status_code=status.HTTP_201_CREATED)
-def create_posts(post:post, db: Session = Depends(get_db)):
-    new_post = models.Post(
-        title=post.title, content = post.content, published = post.published)
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
-    
-    return {"data": new_post}
-
-@app.get("/one_sqlalchemy_posts/{id}")
-def get_post(id: str, db: Session = Depends(get_db)):
-    post2 = db.query(models.Post).filter(models.Post.id == id).first()
-    if not post2:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"post with id:{id} was not found")
-    return {"post_details": post2}
-
-@app.delete("/delete_post_sqlalchemy/{id}",status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id:int, db: Session = Depends(get_db)):
-
-    post_del = db.query(models.Post).filter(models.Post.id == id)
-    if post_del.first() == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"post with this id: {id} does not exist.")
-    
-    post_del.delete(synchronize_session = False)
-    db.commit()
-
-    return Response(status_code= status.HTTP_204_NO_CONTENT)
-   
-@app.put("/update_sql/{id}")
-def update_post(id: int, updated_post: post, db: Session = Depends(get_db)):
-    post_new = db.query(models.Post).filter(models.Post.id == id)
-    post5 = post_new.first()
-    if post5 == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"post with this id: {id} does not exist.")
-    post_new.update(updated_post.model_dump(), synchronize_session= False)
-    db.commit()
-    return post_new.first()

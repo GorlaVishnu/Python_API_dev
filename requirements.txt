@@ -4,3 +4,6 @@ random
 python-dotenv
 uvicorn
 psycopg2
+passlib
+sqlalchemy
+time
