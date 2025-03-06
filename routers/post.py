@@ -1,16 +1,16 @@
-from fastapi import FastAPI,Response,status,HTTPException,Depends, APIRouter
+from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
-from database import engine, get_db
-import models, schema, utils
+from database import get_db
+import models, schema, oauth2
+from typing import List
 
 router = APIRouter()
 
 # CRUD Operations of SQLALCHEMY
 
-@router.post("/create_sqlalchemy_post",status_code=status.HTTP_201_CREATED)
-def create_posts(post: schema.PostBase, db: Session = Depends(get_db)):
-    new_post = models.Post(
-        title=post.title, content = post.content, published = post.published)
+@router.post("/create_sqlalchemy_post",status_code=status.HTTP_201_CREATED, response_model=schema.Post)
+def create_posts(post: schema.PostBase, db: Session = Depends(get_db), get_current_user: int = Depends(oauth2.get_current_user)):
+    new_post = models.Post(title=post.title, content = post.content, published = post.published)
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -31,7 +31,7 @@ def delete_post(id:int, db: Session = Depends(get_db)):
     if post_del.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"post with this id: {id} does not exist.")
-    
+ 
     post_del.delete(synchronize_session = False)
     db.commit()
 

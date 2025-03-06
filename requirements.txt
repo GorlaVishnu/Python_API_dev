@@ -1,9 +1,9 @@
 fastapi
 pydantic
-random
+randrange
 python-dotenv
 uvicorn
 psycopg2
-passlib
+passlib 
 sqlalchemy
 time
