@@ -9,13 +9,12 @@ router = APIRouter()
 # CRUD Operations of SQLALCHEMY
 
 @router.post("/create_sqlalchemy_post",status_code=status.HTTP_201_CREATED, response_model=schema.Post)
-def create_posts(post: schema.PostBase, db: Session = Depends(get_db), get_current_user: int = Depends(oauth2.get_current_user)):
+def create_posts(post: schema.PostCreate, db: Session = Depends(get_db), get_current_user: int = Depends(oauth2.get_current_user)):
     new_post = models.Post(title=post.title, content = post.content, published = post.published)
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    
-    return {"data": new_post}
+    return new_post
 
 @router.get("/one_sqlalchemy_posts/{id}")
 def get_post(id: str, db: Session = Depends(get_db)):
@@ -39,6 +38,54 @@ def delete_post(id:int, db: Session = Depends(get_db)):
    
 @router.put("/update_sql/{id}",response_model=schema.Post)
 def update_post(id: int, updated_post: schema.PostBase, db: Session = Depends(get_db)):
+    post_new = db.query(models.Post).filter(models.Post.id == id)
+    post5 = post_new.first()
+    if post5 == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"post with this id: {id} does not exist.")
+    post_new.update(updated_post.model_dump(), synchronize_session= False)
+    db.commit()
+    return post_new.first()
+
+#user Auth using token 
+
+@router.get("/auth/", response_model=List[schema.Post])
+def get_post(db: Session = Depends(get_db), get_current_user: int = Depends(oauth2.get_current_user)):
+    post2 = db.query(models.Post).all()
+    if not post2:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"No posts not found")
+    return post2
+
+@router.post("/create_auth_format",status_code=status.HTTP_201_CREATED, response_model=schema.Post)
+def create_posts(post: schema.PostCreate, db: Session = Depends(get_db), get_current_user: int = Depends(oauth2.get_current_user)):
+    new_post = models.Post(title=post.title, content = post.content, published = post.published)
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+    return new_post
+
+@router.get("/one_post_auth/{id}",response_model=schema.Post)
+def get_post(id: int, db: Session = Depends(get_db), get_current_user: int = Depends(oauth2.get_current_user)):
+    post2 = db.query(models.Post).filter(models.Post.id == id).first()
+    if not post2:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"post with id:{id} was not found")
+    return  post2
+
+@router.delete("/delete_post_auth/{id}",status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id:int, db: Session = Depends(get_db), user_id: int = Depends(oauth2.get_current_user)):
+
+    post_del = db.query(models.Post).filter(models.Post.id == id)
+    if post_del.first() == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"post with this id: {id} does not exist.")
+ 
+    post_del.delete(synchronize_session = False)
+    db.commit()
+
+    return Response(status_code= status.HTTP_204_NO_CONTENT)
+   
+@router.put("/update_post_auth/{id}",response_model=schema.Post)
+def update_post(id: int, updated_post: schema.PostBase, db: Session = Depends(get_db),user_id: int = Depends(oauth2.get_current_user)):
     post_new = db.query(models.Post).filter(models.Post.id == id)
     post5 = post_new.first()
     if post5 == None:

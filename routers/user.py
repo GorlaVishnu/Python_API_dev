@@ -6,7 +6,7 @@ import models, schema, utils
 from typing import List
 
 router = APIRouter()
-  
+
 @router.post("/users", status_code=status.HTTP_201_CREATED, response_model=schema.UserOut)
 def create_user(user: schema.UserCreate, db: Session = Depends(get_db)):
 

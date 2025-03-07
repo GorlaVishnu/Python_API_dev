@@ -8,12 +8,14 @@ class PostBase(BaseModel):
     published : bool = True
     
 class PostCreate(PostBase):
-    pass
-
+    title : str
+    content : str
 
 
 class Post(BaseModel):
     id : int
+    title : str
+    content : str
     created_at : datetime
     class Config:
         from_attributes = True
@@ -36,5 +38,5 @@ class Token(BaseModel):
     access_token : str
     token_type : str
 class TokenData(BaseModel):
-    id : Optional[str] = None
+    id : Optional[int] = None
 
