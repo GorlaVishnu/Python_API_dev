@@ -1,7 +1,4 @@
-from typing import Optional,List
 from fastapi import FastAPI,Response,status,HTTPException,Depends
-from fastapi.params import Body
-from pydantic import BaseModel
 from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -42,7 +39,6 @@ users = {
 
 @app.get("/task")
 def hello():
-
     return users
 
 @app.get("/sqlalchemy")
