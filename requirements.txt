@@ -7,3 +7,9 @@ psycopg2
 passlib 
 sqlalchemy
 time
+config
+RealDictCursor
+BaseSettings
+APIRouter
+CryptContext
+EmailStr
