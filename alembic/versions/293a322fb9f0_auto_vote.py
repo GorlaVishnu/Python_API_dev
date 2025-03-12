@@ -26,7 +26,9 @@ def upgrade():
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id', 'post_id')
     )
+    pass
 
 def downgrade():
     op.drop_column('votes')
     # ### end Alembic commands ###
+    pass
