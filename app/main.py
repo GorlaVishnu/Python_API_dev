@@ -4,12 +4,11 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
 from sqlalchemy.orm import Session
-from database import engine, get_db
-import models, schema
-from routers import post, user, auth, vote
-from config import settings
-
-print(settings.database_username)
+from app.database import engine, get_db
+import app.models as models 
+import app.schema as schema
+from app.routers import post, user, auth, vote
+from app.config import settings
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -42,9 +41,13 @@ users = {
     "Title" : "dev"
 }
 
-@app.get("/task")
-def hello():
-    return users
+# @app.get("/task")
+# def hello():
+#     return users
+
+@app.get("/task/")
+def root():
+    return {"message" : "Hello World"}
 
 @app.get("/sqlalchemy")
 def test_posts(db: Session = Depends(get_db)):
